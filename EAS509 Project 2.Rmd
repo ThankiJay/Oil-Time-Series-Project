@@ -20,6 +20,30 @@ head(data)
 str(data)
 ```
 
+## Plot before imputing
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
 ## Checking for missing values in the data
 
 ```{r}
