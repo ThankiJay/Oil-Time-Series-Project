@@ -1,0 +1,2 @@
+"0","data = read.csv('oil.csv')"
+"0","head(data)"

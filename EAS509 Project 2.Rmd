@@ -13,14 +13,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Importing the data
 ```{r}
-
+data = read.csv('oil.csv')
+head(data)
+```
+```{r}
+str(data)
 ```
 
-```{r}
-
-```
+## Checking for missing values in the data
 
 ```{r}
+# How many missing values?
 
 ```
 
