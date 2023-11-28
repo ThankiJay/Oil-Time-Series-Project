@@ -184,7 +184,7 @@ data_models(data_ffill)
 
 ```{r}
 data = data_linear
-# 1. Simple Exponential Smoothing (ETS Model: ANN)
+  #1. Simple Exponential Smoothing (ETS Model: ANN)
 #  ets_model1 <- ets(data$Price, model="ANN")
   
   #2. ETS Model with Additive Error and Trend (AAN)
@@ -200,7 +200,7 @@ data = data_linear
 #  hw_model2 <- HoltWinters(data$Price, seasonal = "multiplicative")
   
   #6. Damped Holt-Winters Additive Model
-  #hw_model3 <- HoltWinters(data$Price, damped = TRUE, seasonal = "additive")
+#  hw_model3 <- HoltWinters(data$Price, damped = TRUE, seasonal = "additive")
 ```
 ## Checking for missing values in the data
 
