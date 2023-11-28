@@ -1,1 +1,51 @@
 "0","knitr::opts_chunk$set(echo = TRUE)"
+"0",""
+"0","if (!requireNamespace(""dplyr"", quietly = TRUE)) {"
+"0","  install.packages(""dplyr"")"
+"0","}"
+"0","library(dplyr)"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","if (!requireNamespace(""readr"", quietly = TRUE)) {"
+"0","  install.packages(""readr"")"
+"0","}"
+"0","library(tidyr)"
+"0",""
+"0","if (!requireNamespace(""ggplot2"", quietly = TRUE)) {"
+"0","  install.packages(""ggplot2"")"
+"0","}"
+"0","library(ggplot2)"
+"2","Warning: package ‘ggplot2’ was built under R version 4.2.3"
+"0","if (!requireNamespace(""zoo"", quietly = TRUE)) {"
+"0","  install.packages(""zoo"")"
+"0","}"
+"0","library(zoo)"
+"2","
+Attaching package: ‘zoo’
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+"
+"0","if (!requireNamespace(""forecast"", quietly = TRUE)) {"
+"0","  install.packages(""forecast"")"
+"0","}"
+"2","Registered S3 method overwritten by 'quantmod':
+  method            from
+  as.zoo.data.frame zoo 
+"
+"0","library(forecast)"
