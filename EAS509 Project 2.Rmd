@@ -22,6 +22,16 @@ if (!requireNamespace("ggplot2", quietly = TRUE)) {
   install.packages("ggplot2")
 }
 library(ggplot2)
+
+if (!requireNamespace("zoo", quietly = TRUE)) {
+  install.packages("zoo")
+}
+library(zoo)
+
+if (!requireNamespace("forecast", quietly = TRUE)) {
+  install.packages("forecast")
+}
+library(forecast)
 ```
 
 # Project 2
@@ -56,23 +66,135 @@ ggplot(data, aes(x = Date, y = Price)) +
 ```
 
 ```{r}
+# Forward Fill
+data_ffill <- data
+data_ffill$Price <- na.locf(data_ffill$Price, na.rm = FALSE)
 
+# Backward Fill
+data_bfill <- data
+data_bfill$Price <- na.locf(data_bfill$Price, fromLast = TRUE)
+
+# Linear Interpolation
+data_linear <- data
+data_linear$Price <- na.approx(data_linear$Price, na.rm = FALSE)
+
+# Moving Average
+k <- 5 
+data_ma <- data
+data_ma$Price <- na.fill(data_ma$Price, fill = "extend")
+data_ma$Price <- rollapply(data_ma$Price, k, FUN = mean, na.rm = TRUE, fill = NA, align = 'center')
+
+#comparison_df <- data.frame(
+  #Date = data$Date
+  #,Original = data$Price
+  #,ForwardFill = data_ffill$Price
+  #,BackwardFill = data_bfill$Price
+  #,LinearInterpolation = data_linear$Price
+  #,MovingAverage = data_ma$Price
+#)
+#comparison_df
 ```
 
 ```{r}
-
+data <- data_linear
+ggplot(data, aes(x = Date, y = Price)) +
+  geom_line() +
+  labs(title = "Oil Prices Over Time",
+       x = "Date",
+       y = "Oil Price") +
+  theme_minimal()
 ```
 
 ```{r}
+data_models <- function(data, eval = TRUE) {
+  # 1. Simple Exponential Smoothing (ETS Model: ANN)
+  ets_model1 <- ets(data$Price, model="ANN")
+  
+  #2. ETS Model with Additive Error and Trend (AAN)
+  ets_model2 <- ets(data$Price, model="AAN")
+  
+  #3. ETS Model with Additive Error and Damped Trend (AdN)
+  ets_model3 <- ets(data$Price, model="AdN")
+  
+  #4. Holt-Winters Additive Model
+  hw_model1 <- HoltWinters(data$Price, seasonal = "additive")
+  
+  #5. Holt-Winters Multiplicative Model
+  hw_model2 <- HoltWinters(data$Price, seasonal = "multiplicative")
+  
+  #6. Damped Holt-Winters Additive Model
+  hw_model3 <- HoltWinters(data$Price, damped = TRUE, seasonal = "additive")
+  
+  autoplot(ets_model1) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
+  autoplot(ets_model2) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
+  autoplot(ets_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
+  autoplot(hw_model1) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
+  autoplot(hw_model2) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
+  autoplot(hw_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
+  
+  if (eval) {
+    data_evaluation(ets_model1, ets_model2, ets_model3, hw_model1, hw_model2, hw_model3)
+  }
+}
 
+
+data_evaluation <- function(ets_model1, ets_model2, ets_model3, hw_model1, hw_model2, hw_model3) {
+  cat("---- ETS Model 1 (ANN) ----\n")
+  summary(ets_model1)
+  print(accuracy(ets_model1))
+  cat("\n--------------------------------\n")
+  
+  cat("---- ETS Model 2 (AAN) ----\n")
+  summary(ets_model2)
+  print(accuracy(ets_model2))
+  cat("\n--------------------------------\n")
+  
+  cat("---- ETS Model 3 (AAdN) ----\n")
+  summary(ets_model3)
+  print(accuracy(ets_model3))
+  cat("\n--------------------------------\n")
+  
+  cat("---- Holt-Winters Model 1 (Additive) ----\n")
+  summary(hw_model1)
+  print(accuracy(hw_model1))
+  cat("\n--------------------------------\n")
+  
+  cat("---- Holt-Winters Model 2 (Multiplicative) ----\n")
+  summary(hw_model2)
+  print(accuracy(hw_model2))
+  cat("\n--------------------------------\n")
+  
+  cat("---- Holt-Winters Model 3 (Damped Additive) ----\n")
+  summary(hw_model3)
+  print(accuracy(hw_model3))
+  cat("\n--------------------------------\n")
+}
+```
+
+
+```{r}
+data_models(data_ffill)
 ```
 
 ```{r}
-
-```
-
-```{r}
-
+data = data_linear
+# 1. Simple Exponential Smoothing (ETS Model: ANN)
+  ets_model1 <- ets(data$Price, model="ANN")
+  
+  #2. ETS Model with Additive Error and Trend (AAN)
+#  ets_model2 <- ets(data$Price, model="AAN")
+  
+  #3. ETS Model with Additive Error and Damped Trend (AdN)
+#  ets_model3 <- ets(data$Price, model="AAN")
+  
+  #4. Holt-Winters Additive Model
+#  hw_model1 <- HoltWinters(data$Price, seasonal = "additive")
+  
+  #5. Holt-Winters Multiplicative Model
+#  hw_model2 <- HoltWinters(data$Price, seasonal = "multiplicative")
+  
+  #6. Damped Holt-Winters Additive Model
+  #hw_model3 <- HoltWinters(data$Price, damped = TRUE, seasonal = "additive")
 ```
 # Phase 1: EDA & Data Cleaning
 
