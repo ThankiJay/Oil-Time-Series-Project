@@ -7,6 +7,21 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  install.packages("dplyr")
+}
+library(dplyr)
+
+if (!requireNamespace("readr", quietly = TRUE)) {
+  install.packages("readr")
+}
+library(tidyr)
+
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+}
+library(ggplot2)
 ```
 
 # Project 2
@@ -24,6 +39,40 @@ head(data)
 ```
 ```{r}
 str(data)
+```
+```{r}
+data <- data %>% setNames(c('Date', 'Price'))
+data$Date <- as.Date(data$Date)
+```
+
+## Plot before imputing
+```{r}
+ggplot(data, aes(x = Date, y = Price)) +
+  geom_line() +
+  labs(title = "Oil Prices Over Time",
+       x = "Date",
+       y = "Oil Price") +
+  theme_minimal()
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```
 # Phase 1: EDA & Data Cleaning
 
