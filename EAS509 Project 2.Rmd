@@ -51,12 +51,16 @@ data$Date <- as.Date(data$Date)
 
 ## Plot before imputing
 ```{r}
-ggplot(data, aes(x = Date, y = Price)) +
-  geom_line() +
-  labs(title = "Oil Prices Over Time",
-       x = "Date",
-       y = "Oil Price") +
-  theme_minimal()
+oilplot = function(data, title = "Oil Prices Over Time") {
+  ggplot(data, aes(x = Date, y = Price)) +
+    geom_line() +
+    labs(title = title,
+        x = "Date",
+        y = "Oil Price") +
+    theme_minimal()
+}
+
+oilplot(data)
 ```
 
 ```{r}
@@ -77,26 +81,34 @@ k <- 5
 data_ma <- data
 data_ma$Price <- na.fill(data_ma$Price, fill = "extend")
 data_ma$Price <- rollapply(data_ma$Price, k, FUN = mean, na.rm = TRUE, fill = NA, align = 'center')
-
-#comparison_df <- data.frame(
-  #Date = data$Date
-  #,Original = data$Price
-  #,ForwardFill = data_ffill$Price
-  #,BackwardFill = data_bfill$Price
-  #,LinearInterpolation = data_linear$Price
-  #,MovingAverage = data_ma$Price
-#)
-#comparison_df
 ```
 
 ```{r}
-data <- data_linear
-ggplot(data, aes(x = Date, y = Price)) +
-  geom_line() +
-  labs(title = "Oil Prices Over Time",
-       x = "Date",
-       y = "Oil Price") +
-  theme_minimal()
+comparison_df <- data.frame(
+   Date = data$Date
+  ,Original = data$Price
+  ,ForwardFill = data_ffill$Price
+  ,BackwardFill = data_bfill$Price
+  ,LinearInterpolation = data_linear$Price
+  ,MovingAverage = data_ma$Price
+)
+comparison_df
+```
+
+```{r}
+sum(is.na(comparison_df$Original))
+sum(is.na(comparison_df$ForwardFill))
+sum(is.na(comparison_df$BackwardFill))
+sum(is.na(comparison_df$LinearInterpolation))
+sum(is.na(comparison_df$MovingAverage))
+```
+
+```{r}
+oilplot(data)
+oilplot(data_ffill, "Forward Fill")
+oilplot(data_bfill, "Backward Fill")
+oilplot(data_linear, "Linear Interpolation")
+oilplot(data_ma, "Moving Average")
 ```
 
 ```{r}
@@ -173,7 +185,7 @@ data_models(data_ffill)
 ```{r}
 data = data_linear
 # 1. Simple Exponential Smoothing (ETS Model: ANN)
-  ets_model1 <- ets(data$Price, model="ANN")
+#  ets_model1 <- ets(data$Price, model="ANN")
   
   #2. ETS Model with Additive Error and Trend (AAN)
 #  ets_model2 <- ets(data$Price, model="AAN")
