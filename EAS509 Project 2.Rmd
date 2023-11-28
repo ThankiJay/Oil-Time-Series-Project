@@ -80,7 +80,6 @@ cat("Rows with missing values in column 'dcoilwtico':\n")
 print(rows_with_missing_values)
 ```
 
-
 ## Plot before imputing
 ```{r}
 oilplot = function(data, title = "Oil Prices Over Time") {
@@ -154,7 +153,7 @@ data_models <- function(data, eval = TRUE) {
   ets_model2 <- ets(data$Price, model="AAN")
   
   #3. ETS Model with Additive Error and Damped Trend (AdN)
-  ets_model3 <- ets(data$Price, model="AdN")
+  ets_model3 <- ets(data$Price, model="AAdN")
   
   #4. Holt-Winters Additive Model
   hw_model1 <- HoltWinters(data$Price, seasonal = "additive")
@@ -167,7 +166,7 @@ data_models <- function(data, eval = TRUE) {
   
   autoplot(ets_model1) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
   autoplot(ets_model2) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
-  autoplot(ets_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
+  #autoplot(ets_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
   autoplot(hw_model1) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
   autoplot(hw_model2) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
   autoplot(hw_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
