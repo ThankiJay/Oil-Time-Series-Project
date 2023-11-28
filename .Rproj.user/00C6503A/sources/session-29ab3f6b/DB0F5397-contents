@@ -11,32 +11,68 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Project 2
 
+## Importing the libraries
+```{r}
+library(zoo)
+```
+
 ## Importing the data
 ```{r}
 data = read.csv('oil.csv')
+data$date <- as.Date(data$date)
 head(data)
 ```
 ```{r}
 str(data)
 ```
+# Phase 1: EDA & Data Cleaning
 
 ## Checking for missing values in the data
 
 ```{r}
 # How many missing values?
+missing_values <- sum(is.na(data))
 
+# Print the number of missing values
+cat("Number of missing values in the entire data frame:", missing_values, "\n")
 ```
 
 ```{r}
+# Check for missing values in each column
+missing_values_per_column <- sapply(data, function(x) sum(is.na(x)))
 
+# Print the number of missing values for each column
+cat("Number of missing values per column:\n")
+print(missing_values_per_column)
 ```
-
+ We have 43 missing values for oil price
 ```{r}
+# Identify rows with missing values in a specific column
+rows_with_missing_values <- which(is.na(data$dcoilwtico))
 
+# Print the rows with missing values
+cat("Rows with missing values in column 'dcoilwtico':\n")
+print(rows_with_missing_values)
 ```
-
+## Imputing the data
 ```{r}
+# Forward Fill
+oil_data_ffill <- data
+oil_data_ffill$dcoilwtico <- na.locf(oil_data_ffill$dcoilwtico, na.rm = FALSE)
 
+# Backward Fill
+oil_data_bfill <- data
+oil_data_bfill$dcoilwtico <- na.locf(oil_data_bfill$dcoilwtico, fromLast = TRUE)
+
+# Linear Interpolation
+oil_data_linear <- data
+oil_data_linear$dcoilwtico <- na.approx(oil_data_linear$dcoilwtico)
+
+# Moving Average
+k <- 7
+oil_data_ma <- data
+oil_data_ma$dcoilwtico <- na.fill(oil_data_ma$dcoilwtico, fill = "extend")
+oil_data_ma$dcoilwtico <- rollapply(oil_data_ma$dcoilwtico, k, FUN = mean, na.rm = TRUE, fill = NA, align = 'center')
 ```
 
 ```{r}

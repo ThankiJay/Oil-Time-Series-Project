@@ -1,0 +1,14 @@
+"0","# Forward Fill"
+"0","oil_data_ffill <- data"
+"0","oil_data_ffill$dcoilwtico <- na.locf(oil_data_ffill$dcoilwtico, na.rm = FALSE)"
+"0",""
+"0","# Backward Fill"
+"0","oil_data_bfill <- data"
+"0","oil_data_bfill$dcoilwtico <- na.locf(oil_data_bfill$dcoilwtico, fromLast = TRUE)"
+"0",""
+"0","# Linear Interpolation"
+"0","oil_data_linear <- data"
+"0","oil_data_linear$dcoilwtico <- na.approx(oil_data_linear$dcoilwtico)"
+"2","Error in `$<-.data.frame`(`*tmp*`, dcoilwtico, value = c(93.14, 92.97,  : 
+  replacement has 1217 rows, data has 1218
+"
