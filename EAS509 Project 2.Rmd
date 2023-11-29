@@ -6,7 +6,6 @@ output: html_document
 ---
 # Project 2
 
-## Importing the libraries
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -50,9 +49,7 @@ data$Date <- as.Date(data$Date)
 ```
 
 # Phase 1: EDA & Data Cleaning
-
 ## Checking for missing values in the data
-
 ```{r}
 # How many missing values?
 missing_values <- sum(is.na(data))
@@ -60,7 +57,6 @@ missing_values <- sum(is.na(data))
 # Print the number of missing values
 cat("Number of missing values in the entire data frame:", missing_values, "\n")
 ```
-
 ```{r}
 # Check for missing values in each column
 missing_values_per_column <- sapply(data, function(x) sum(is.na(x)))
@@ -93,6 +89,7 @@ oilplot = function(data, title = "Oil Prices Over Time") {
 
 oilplot(data)
 ```
+
 ## Imputing the data
 
 ```{r}
@@ -115,7 +112,8 @@ data_ma$Price <- na.fill(data_ma$Price, fill = "extend")
 data_ma$Price <- rollapply(data_ma$Price, k, FUN = mean, na.rm = TRUE, fill = NA, align = 'center')
 ```
 
-# Data Plots After Imputation
+## Missing values after imputation
+
 ```{r}
 comparison_df <- data.frame(
    Date = data$Date
@@ -125,7 +123,6 @@ comparison_df <- data.frame(
   ,LinearInterpolation = data_linear$Price
   ,MovingAverage = data_ma$Price
 )
-comparison_df
 ```
 
 ```{r}
@@ -135,7 +132,7 @@ sum(is.na(comparison_df$BackwardFill))
 sum(is.na(comparison_df$LinearInterpolation))
 sum(is.na(comparison_df$MovingAverage))
 ```
-
+## Data Plots After Imputation
 ```{r}
 oilplot(data)
 oilplot(data_ffill, "Forward Fill")
@@ -143,6 +140,19 @@ oilplot(data_bfill, "Backward Fill")
 oilplot(data_linear, "Linear Interpolation")
 oilplot(data_ma, "Moving Average")
 ```
+
+All imputation methods except backward fill are unable to fill in all missing values,
+thus we pick backward fill imputed data.
+
+# Now Checking for seasonality in the time series data
+```{r}
+# ACF plot
+acf(data_bfill)
+```
+
+Here all the bars for our ACF plots are of same height. We can not see any spike in the graph for any lags which suggest that there is no strong seasonality in the data.
+
+# Phase 2: Model Training & Evaluation
 
 ```{r}
 data_models <- function(data, eval = TRUE) {
@@ -152,1095 +162,86 @@ data_models <- function(data, eval = TRUE) {
   #2. ETS Model with Additive Error and Trend (AAN)
   ets_model2 <- ets(data$Price, model="AAN")
   
-  #3. ETS Model with Additive Error and Damped Trend (AdN)
-  ets_model3 <- ets(data$Price, model="AAdN")
+  #3. Auto ARIMA Model
+  best_arima_model <- auto.arima(data$Price)
   
-  #4. Holt-Winters Additive Model
-  hw_model1 <- HoltWinters(data$Price, seasonal = "additive")
+  #4. Simple Exponential Smoothing
+  ses_model <- ets(data$Price, model="ZNN")
+
+  #5. Holt’s Linear Trend Method
+  holt_model <- ets(data$Price, model="ANN")
   
-  #5. Holt-Winters Multiplicative Model
-  hw_model2 <- HoltWinters(data$Price, seasonal = "multiplicative")
-  
-  #6. Damped Holt-Winters Additive Model
-  hw_model3 <- HoltWinters(data$Price, damped = TRUE, seasonal = "additive")
   
   autoplot(ets_model1) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
   autoplot(ets_model2) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
-  #autoplot(ets_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("ETS Model Fit")
-  autoplot(hw_model1) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
-  autoplot(hw_model2) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
-  autoplot(hw_model3) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt-Winters Model Fit")
-  
+  autoplot(best_arima_model) + xlab("Time") + ylab("Oil Prices") + ggtitle("Auto ARIMA Model Fit")
+  autoplot(ses_model) + xlab("Time") + ylab("Oil Prices") + ggtitle("Simple Exponential Smoothing")
+  autoplot(holt_model) + xlab("Time") + ylab("Oil Prices") + ggtitle("Holt’s Linear Trend Method")
+
   if (eval) {
-    data_evaluation(ets_model1, ets_model2, ets_model3, hw_model1, hw_model2, hw_model3)
+    data_evaluation(ets_model1, ets_model2, best_arima_model, ses_model, holt_model)
   }
 }
 
-
-data_evaluation <- function(ets_model1, ets_model2, ets_model3, hw_model1, hw_model2, hw_model3) {
+data_evaluation <- function(ets_model1, ets_model2, best_arima_model, ses_model, holt_model) {
   cat("---- ETS Model 1 (ANN) ----\n")
-  summary(ets_model1)
+  print(summary(ets_model1))
   print(accuracy(ets_model1))
   cat("\n--------------------------------\n")
   
   cat("---- ETS Model 2 (AAN) ----\n")
-  summary(ets_model2)
+  print(summary(ets_model2))
   print(accuracy(ets_model2))
   cat("\n--------------------------------\n")
-  
-  cat("---- ETS Model 3 (AAdN) ----\n")
-  summary(ets_model3)
-  print(accuracy(ets_model3))
+
+  cat("---- Auto ARIMA Model  ----\n")
+  print(summary(best_arima_model))
+  print(accuracy(best_arima_model))
   cat("\n--------------------------------\n")
-  
-  cat("---- Holt-Winters Model 1 (Additive) ----\n")
-  summary(hw_model1)
-  print(accuracy(hw_model1))
+
+  cat("---- Simple Exponential Smoothing ----\n")
+  print(summary(ses_model))
+  print(accuracy(ses_model))
   cat("\n--------------------------------\n")
-  
-  cat("---- Holt-Winters Model 2 (Multiplicative) ----\n")
-  summary(hw_model2)
-  print(accuracy(hw_model2))
-  cat("\n--------------------------------\n")
-  
-  cat("---- Holt-Winters Model 3 (Damped Additive) ----\n")
-  summary(hw_model3)
-  print(accuracy(hw_model3))
+
+  cat("---- Holt’s Linear Trend Method ----\n")
+  print(summary(holt_model))
+  print(accuracy(holt_model))
   cat("\n--------------------------------\n")
 }
 ```
 
-
-```{r}
-data_models(data_ffill)
-```
-
-```{r}
-data = data_linear
-  #1. Simple Exponential Smoothing (ETS Model: ANN)
-#  ets_model1 <- ets(data$Price, model="ANN")
-  
-  #2. ETS Model with Additive Error and Trend (AAN)
-#  ets_model2 <- ets(data$Price, model="AAN")
-  
-  #3. ETS Model with Additive Error and Damped Trend (AdN)
-#  ets_model3 <- ets(data$Price, model="AAN")
-  
-  #4. Holt-Winters Additive Model
-#  hw_model1 <- HoltWinters(data$Price, seasonal = "additive")
-  
-  #5. Holt-Winters Multiplicative Model
-#  hw_model2 <- HoltWinters(data$Price, seasonal = "multiplicative")
-  
-  #6. Damped Holt-Winters Additive Model
-#  hw_model3 <- HoltWinters(data$Price, damped = TRUE, seasonal = "additive")
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
 ```{r}
-
+data_models(data_bfill)
 ```
 
-```{r}
 
-```
+---
 
-```{r}
+## Model Performance Evaluation
 
-```
+In our analysis, we evaluated several models to forecast oil prices, using key statistical metrics to assess their performance. These metrics include Mean Error (ME), Root Mean Square Error (RMSE), Mean Absolute Error (MAE), Mean Percentage Error (MPE), Mean Absolute Percentage Error (MAPE), Mean Absolute Scaled Error (MASE), and the Autocorrelation of the first lag (ACF1). Each metric provides a different perspective on the accuracy and reliability of the forecasting models.
 
-```{r}
+### Best Performing Model
+The **Auto ARIMA Model** emerged as the best performing model in our analysis. It demonstrated the lowest RMSE (1.203095), MAE (0.8949041), and MASE (0.9992644), which are critical indicators of a model's accuracy and consistency. Furthermore, the ME (-0.03759184) and MPE (-0.08030733) values are among the lowest, suggesting a lower bias in the model's predictions. This model's superior performance across these metrics indicates its robustness in forecasting oil prices.
 
-```
+Specific details of the **Auto ARIMA Model** are as follows:
+- Model Type: ARIMA(0,1,0)
+- sigma^2 = 1.449
+- Log Likelihood = -1952.37
+- AIC = 3906.73
+- AICc = 3906.73
+- BIC = 3911.83
 
-```{r}
+This information indicates a simple model without AR or MA components but with a differencing order of 1, suggesting that the model primarily focuses on capturing the changes rather than absolute levels in the oil price series.
 
-```
+### Poorest Performing Models
+The **Simple Exponential Smoothing and Holt’s Linear Trend Method** showed identical metrics and were identified as the poorest performing models in our dataset. They recorded higher RMSE (1.20184), MAE (0.8965985), and MASE (1.001156) compared to the Auto ARIMA Model. Their ME (-0.03953028) and MPE (-0.08424058) were also higher, indicating a greater degree of bias in forecasts. These models, while still providing reasonable forecasts, were outperformed by other models in our evaluation.
 
-```{r}
+### Other Models
+The **ETS Model 2 (AAN)** displayed competitive performance with a slightly higher RMSE (1.201391), MAE (0.8974959), and MASE (1.002158) than the Auto ARIMA Model. It also showed the lowest MPE (-0.01745455), suggesting minimal bias in its predictions. The **ETS Model 1 (ANN)**, while competitive, slightly underperformed in comparison to the Auto ARIMA and ETS Model 2, as indicated by its RMSE, MAE, and MASE values.
 
-```
+### Conclusion
+It's important to note that the differences in performance among the models are relatively minor. However, Based on our analysis, we recommend the **Auto ARIMA Model** for forecasting oil prices, due to its superior performance across various statistical metrics. 
 
+--- 
