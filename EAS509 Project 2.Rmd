@@ -56,8 +56,7 @@ missing_values <- sum(is.na(data))
 
 # Print the number of missing values
 cat("Number of missing values in the entire data frame:", missing_values, "\n")
-```
-```{r}
+
 # Check for missing values in each column
 missing_values_per_column <- sapply(data, function(x) sum(is.na(x)))
 
@@ -91,7 +90,6 @@ oilplot(data)
 ```
 
 ## Imputing the data
-
 ```{r}
 # Forward Fill
 data_ffill <- data
@@ -113,7 +111,7 @@ data_ma$Price <- rollapply(data_ma$Price, k, FUN = mean, na.rm = TRUE, fill = NA
 ```
 
 ## Missing values after imputation
-```{r}
+```{r, include=FALSE}
 comparison_df <- data.frame(
    Date = data$Date
   ,Original = data$Price
@@ -125,12 +123,21 @@ comparison_df <- data.frame(
 ```
 
 ```{r}
-sum(is.na(comparison_df$Original))
-sum(is.na(comparison_df$ForwardFill))
-sum(is.na(comparison_df$BackwardFill))
-sum(is.na(comparison_df$LinearInterpolation))
-sum(is.na(comparison_df$MovingAverage))
+cat("Missing values in Original data:", sum(is.na(comparison_df$Original)))
 ```
+```{r}
+cat("Missing values after Forward Fill Imputation:", sum(is.na(comparison_df$ForwardFill)))
+```
+```{r}
+cat("Missing values after Backward Fill Imputation:", sum(is.na(comparison_df$BackwardFill)))
+```
+```{r}
+cat("Missing values after Linear Interpolation Imputation:", sum(is.na(comparison_df$LinearInterpolation)))
+```
+```{r}
+cat("Missing values after Moving Average Imputation:", sum(is.na(comparison_df$MovingAverage)))
+```
+
 ## Data Plots After Imputation
 ```{r}
 oilplot(data)
@@ -140,7 +147,8 @@ oilplot(data_linear, "Linear Interpolation")
 oilplot(data_ma, "Moving Average")
 ```
 
-All imputation methods except backward fill are unable to fill in all missing values, thus we pick backward fill imputed data.
+#### All imputation methods except backward fill are unable to fill in all missing values, thus we pick backward fill imputed data.
+
 
 # Now Checking for seasonality in the time series data
 ```{r}
@@ -150,73 +158,82 @@ acf(data_bfill)
 
 Here all the bars for our ACF plots are of same height. We can not see any spike in the graph for any lags which suggest that there is no strong seasonality in the data.
 
-# Phase 2: Model Training & Evaluation
+# Phase 2: Models considered for Training & Evaluation
 
-1. Simple Exponential Smoothing (ETS Model: ANN)
+## Models Overview
+### 1. Simple Exponential Smoothing (ETS Model: ANN)
 
-Theory: 
-Simple Exponential Smoothing (SES) is used for forecasting univariate time series data. In this model, forecasts are calculated using weighted averages of past observations, where the weights decrease exponentially as observations get older, hence the name "exponential smoothing."
+**Theory:**
+Simple Exponential Smoothing (SES) is used for forecasting univariate time series data. This method is particularly useful when the data do not show any clear trend or seasonal pattern.
 
-Model Characteristics:
-ANN (Additive error, No trend, No seasonality): This is the simplest form of the ETS model, suitable for time series data with no clear trend or seasonal pattern. It's effective for smoothing out noise and forecasting in the short term.
+In this model, forecasts are calculated using weighted averages of past observations, where the weights decrease exponentially as observations get older, hence the name "exponential smoothing."
 
-Error Type (Additive): In the additive error model, the forecast errors are assumed to be randomly distributed around zero.
+**Model Characteristics:**
+ANN (Additive error, No trend, No seasonality): This is is the most basic version of the ETS model and is appropriate for time series data that lacks an identifiable trend or seasonal pattern. It smooths out random fluctuations in the data, making it suitable for short-term forecasting.
 
-2. ETS Model with Additive Error and Trend (AAN)
+In the additive error model, the forecast errors are assumed to be randomly distributed around zero.
 
-Theory: 
-This variation of ETS introduces a trend component to the simple exponential smoothing model.
-Model Characteristics:
-AAN (Additive error, Additive trend, No seasonality): Suitable for data that shows a linear trend. The additive trend implies that the magnitude of the trend is constant over time.
+### 2. ETS Model with Additive Error and Trend (AAN)
 
-Trend Component (Additive): The additive trend is a linear trend that can either be increasing or decreasing over time. The model adapts to changes in the trend but assumes that the trend's impact on the forecast is constant in each period.
+**Theory:**
+This model introduces a trend component to the basic exponential smoothing method, making it more suitable for data that shows a linear trend over time.
 
-3. Auto ARIMA Model
+**Model Characteristics:**
+AAN (Additive error, Additive trend, No seasonality): It's designed for time series data where the trend is linear and the magnitude of the trend is consistent over time. The additive trend implies that the magnitude of the trend is constant over time.
 
-Theory: The ARIMA model is a generalization of an autoregressive moving average (ARMA) model. ARIMA models are applied in cases where data shows evidence of non-stationarity, and they incorporate the differencing of raw observations (i.e., subtracting an observation from an observation at the previous time step) to make the time series stationary.
+The additive nature of the trend suggests that it adds a constant value in each successive period.
 
-Model Characteristics:
-Components: ARIMA models are characterized by three primary parameters: p (AR terms), d (differencing order), and q (MA terms).
+### 3. Auto ARIMA Model
 
-Auto ARIMA: This function automates the process of model selection by identifying the optimal combination of p, d, and q that provides the best fit to the time series.
+**Theory:**
+The ARIMA model is a generalization of an autoregressive moving average (ARMA) model. It's particularly useful for data that exhibit non-stationarity, which is common in economic time series. They incorporate the differencing of raw observations (i.e., subtracting an observation from an observation at the previous time step) to make the time series stationary.
 
-4. Simple Exponential Smoothing (ZNN)
+**Model Characteristics:**
+Components: The model is characterized by three parameters: p (AR terms), d (differencing order), and q (MA terms).
 
-Theory: This approach involves allowing the ETS function to automatically select the most appropriate model based on the data.
+Auto ARIMA automates the process of selecting the best combination of these parameters to fit the time series data optimally.
 
-Model Characteristics:
-Automatic Model Selection: The algorithm assesses various combinations of error, trend, and seasonality components and selects the model that best captures the underlying patterns in the data.
+### 4. Simple Exponential Smoothing (ZNN)
 
-Flexibility: This method is beneficial when the user is unsure about the specific characteristics of the time series data.
+**Theory:**
+This approach involves an automated selection of the most appropriate ETS model based on the data. It adapts to various types of time series data without the need for manual specification of the model's components.
 
-5. Damped Trend Exponential Smoothing
+**Model Characteristics:**
+Automatic Model Selection: The algorithm assesses various combinations of error, trend, and seasonality and chooses the one that best fits the data.
 
-Theory: 
-This model is an extension of the ETS model that includes a damped trend component. It is particularly useful for long-term forecasting.
+This method is particularly useful when there is uncertainty about the specific nature of the time series data.
 
-Model Characteristics:
-Damped Trend: Unlike a simple linear trend, a damped trend slows down over time, becoming flatter in the future. This makes the model less aggressive in projecting future trends and can yield more realistic long-term forecasts.
+### 5. Damped Trend Exponential Smoothing
 
-Applicability: Best suited for time series data where the trend is expected to lose momentum over time.
+**Theory:** 
+This model is an extension of the ETS model that includes a damped trend component. It is particularly useful for long-term forecasting where trends are expected to diminish over time.
 
+**Model Characteristics:**
+Damped Trend: Unlike a simple linear trend, a damped trend slows down over time, becoming flatter in the future. This feature makes the model less aggressive in projecting future values, often leading to more realistic and conservative long-term forecasts.
+
+This model is best suited for time series data where the trend is expected to lose momentum over time.
+
+## Implementation
 R script is designed for time series analysis, specifically for modeling and evaluating oil prices. It follows these steps:
 
-Model Training: Various time series forecasting models are trained using the Price column from the data dataset. The models include:
-        Simple Exponential Smoothing (ETS ANN model)
-        ETS with Additive Error and Trend (AAN model)
-        Auto ARIMA Model
-        Simple Exponential Smoothing (ZNN model)
-        Damped Trend Exponential Smoothing (AAN model with damping)
+**Model Training:**
+Various time series forecasting models are trained using the Price column from the data dataset. The models include:
+- Simple Exponential Smoothing (ETS ANN model)
+- ETS with Additive Error and Trend (AAN model)
+- Auto ARIMA Model
+- Simple Exponential Smoothing (ZNN model)
+- Damped Trend Exponential Smoothing (AAN model with damping)
 
-Model Visualization: The script uses the autoplot function (likely from the forecast package) to plot the fits of these models.
+**Model Visualization:**
+The script uses the autoplot function (likely from the forecast package) to plot the fits of these models.
 
-Model Evaluation (Optional): If the eval parameter is TRUE, the data_evaluation function is called to evaluate these models. This function prints summaries and accuracy metrics for each model.
+**Model Evaluation (Optional):**
+If the eval parameter is TRUE, the data_evaluation function is called to evaluate these models. This function prints summaries and accuracy metrics for each model.
 
-When you run this script, it will:
-
-  Train multiple time series models on your data.
-  Generate plots for each model to visualize their performance.
-  Optionally, provide detailed evaluations of each model, including summaries and accuracy metrics.
+**When you run this script, it will:**
+- Train multiple time series models on your data.
+- Generate plots for each model to visualize their performance.
+- Optionally, provide detailed evaluations of each model, including summaries   and accuracy metrics.
     
 ```{r}
 data_models <- function(data, eval = TRUE) {
@@ -287,10 +304,11 @@ data_models(data_bfill)
 In our analysis, we evaluated several models to forecast oil prices, using key statistical metrics to assess their performance. These metrics include Mean Error (ME), Root Mean Square Error (RMSE), Mean Absolute Error (MAE), Mean Percentage Error (MPE), Mean Absolute Percentage Error (MAPE), Mean Absolute Scaled Error (MASE), and the Autocorrelation of the first lag (ACF1). Each metric provides a different perspective on the accuracy and reliability of the forecasting models.
 
 ### Best Performing Model
+
 The **Auto ARIMA Model** emerged as the best performing model in our analysis. It demonstrated the lowest RMSE (1.203095), MAE (0.8949041), and MASE (0.9992644), which are critical indicators of a model's accuracy and consistency. Furthermore, the ME (-0.03759184) and MPE (-0.08030733) values are among the lowest, suggesting a lower bias in the model's predictions. This model's superior performance across these metrics indicates its robustness in forecasting oil prices.
 
 
-Specific details of the **Auto ARIMA Model** are as follows:
+### Specific details of the **Auto ARIMA Model** are as follows:
 
 - Model Type: ARIMA(0,1,0)
 - $sigma^2$ = 1.449
